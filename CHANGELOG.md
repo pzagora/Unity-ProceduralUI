@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.1]
+
+- Fixed partial-width foldout header backgrounds while preserving inset arrows and full-width clickable headers.
+
 ## [1.0.0]
 
 - Integrated optional inline gradients and a standalone UIGradient component using shared settings and rendering code.
