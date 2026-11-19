@@ -52,11 +52,19 @@ namespace ProceduralUI
                 _ => Vector4.zero
             };
 
+            return ClampRadii(rect, radii);
+        }
+
+        internal static Vector4 ClampRadii(Rect rect, Vector4 radii)
+        {
             radii = Vector4.Max(Vector4.zero, radii);
+            var diagonal = Mathf.Max(rect.width, rect.height);
             var scale = Mathf.Min(1f, Fit(rect.width, radii.x + radii.y));
             scale = Mathf.Min(scale, Fit(rect.width, radii.z + radii.w));
             scale = Mathf.Min(scale, Fit(rect.height, radii.x + radii.w));
             scale = Mathf.Min(scale, Fit(rect.height, radii.y + radii.z));
+            scale = Mathf.Min(scale, Fit(diagonal, radii.x + radii.z));
+            scale = Mathf.Min(scale, Fit(diagonal, radii.y + radii.w));
             return radii * scale;
         }
 
@@ -72,7 +80,7 @@ namespace ProceduralUI
             radii /= minimumSide;
             falloff = Mathf.Max(0, falloff);
             var packedRadii = new Vector4(Pack(radii.x, radii.y), Pack(radii.z, radii.w), splitAlpha ? 1 : 0, 0);
-            var borderData = new Vector4(border <= 0 ? 1 : Mathf.Clamp01(border / minimumSide * 2),
+            var borderData = new Vector4(border <= 0 ? 2 : Mathf.Clamp01(border / minimumSide * 2),
                 falloff > 0 ? Mathf.Min(MAX_PIXEL_SCALE, 1f / falloff) : MAX_PIXEL_SCALE, 0, 0);
             var vertex = default(UIVertex);
 

@@ -22,7 +22,7 @@ Create **GameObject > UI (Canvas) > Procedural Image**. Select a corner mode in 
 
 Border Width of zero fills the shape. Positive values draw an outline. Edge Softness controls the edge transition in local UI units.
 
-Shape, Gradient and Interaction & Masking are collapsible. Their expanded state is retained during the editor session; collapsing a section does not disable its settings.
+Shape, Gradient, Shadow, Interaction and Masking are collapsible. Their expanded state is retained during the editor session; collapsing a section does not disable its settings. A collapsed section shows right-aligned summary badges with tooltips for its enabled settings — rounded corners, outline width, edge softness, the active gradient (drawn with its own colors), the shadow, raycast target and maskable — so the configuration is visible at a glance. The badges hide automatically when the inspector is too narrow to show them without overlapping the section title.
 
 The inspector also exposes source sprite, tint, material, Simple/Sliced/Tiled/Filled image types, fill controls, Preserve Aspect, Use Sprite Mesh, Set Native Size, Raycast Target/Padding and Maskable. Preserve Aspect and sprite mesh controls follow standard Image applicability. Custom materials must implement the procedural vertex layout.
 
@@ -41,6 +41,22 @@ Angle zero runs from the bottom (start) to the top (end). Angle 90 runs from lef
 Multiply combines the gradient with the Image tint and alpha. Override replaces them according to Intensity. CanvasGroup opacity and CanvasRenderer fading still apply after either mode.
 
 Use **Add Component > UI > Effects > UI Gradient** for an ordinary uGUI Graphic. It uses the same renderer and settings. Procedural Images normally use their inline gradient without an additional component. TextMeshPro's own text rendering and vertex gradients are outside this component's scope.
+
+## Drop shadow
+
+Enable the **Shadow** section for a soft blurred drop shadow that follows the image's actual shape, including transparent sprites. It captures the image to a render texture, blurs it with a separable Gaussian, and draws the result behind the content. Configure its color, offset, size (blur) and spread.
+
+The shadow renders in its exact color at any hue. Enable **Sample Content Color** to tint the shadow with the content's own colors instead; the color's alpha still controls strength.
+
+The shadow follows the content as it moves and only re-captures when the content or size changes, so a static or moving shadow is cheap; an every-frame-animated source rebuilds every frame. The section manages a hidden component that does the work.
+
+Current limitation: alignment assumes content without rotation.
+
+## Mask children
+
+The **Masking** section has a **Mask Children** toggle that adds or removes a standard uGUI `Mask` component for you, so child graphics are clipped to the image's rounded shape without adding the component by hand. Enable **Show Mask Graphic** to keep drawing the image itself while it masks.
+
+This reuses Unity's stencil masking rather than reimplementing it, so it behaves exactly like a hand-added `Mask`. The clipped region follows the shape's rendered alpha, so rounded corners clip rounded. For rectangular, performance-oriented clipping of large scrolling areas, prefer `RectMask2D`.
 
 ## Runtime API
 

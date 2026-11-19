@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0]
+
+- Added folded-state summary badges to the section headers. Collapsed Shape, Gradient, Shadow, Interaction and Masking sections show right-aligned glyphs with tooltips for their enabled settings, and hide automatically when the inspector is too narrow to show them without overlapping the title.
+- Gradient angle now rotates smoothly and without warping: the direction is a pure rotation (no rate change at 0/90/180/270°), and Linear and Corners gradients tessellate the mesh before baking so bands stay straight at diagonal angles. At diagonal angles the gradient no longer stretches exactly to the corners.
+- Fixed Individual corner artifacts with large radii: filled shapes cover the full interior depth (no inner hole when a corner radius exceeds half the shorter side), and diagonal corner-radius sums are clamped so a large corner cannot poke through an opposite rounded corner. Large single and adjacent corners are preserved.
+- Added a **Shadow** section that casts a blurred drop shadow for the image. It captures the image to a render texture, blurs it with a separable Gaussian, and draws it behind the content with configurable color, offset, size and spread, plus a **Sample Content Color** option that tints the shadow with the content's own colors. The shadow follows the content's movement and only re-captures when the content or size changes; it is driven by a managed, hidden component.
+- Added a **Mask Children** toggle to the Masking section that adds or removes a standard uGUI `Mask` (hidden and managed) so the image can clip its children to its rounded shape, with an optional **Show Mask Graphic**.
+- Split the former "Interaction & Masking" section into separate **Interaction** and **Masking** sections.
+
 ## [1.0.2]
 
 - Organized runtime, editor and test files by responsibility while preserving asset GUIDs and public namespaces.

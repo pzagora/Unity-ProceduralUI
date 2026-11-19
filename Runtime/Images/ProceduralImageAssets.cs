@@ -7,11 +7,15 @@ namespace ProceduralUI
     {
         [SerializeField] private Material defaultMaterial;
         [SerializeField] private Sprite whiteSprite;
+        [SerializeField] private Shader shadowDisplayShader;
+        [SerializeField] private Shader shadowBlurShader;
 
         private static ProceduralImageAssets _instance;
 
         internal static Material Material => Instance.defaultMaterial;
         internal static Sprite WhiteSprite => Instance.whiteSprite;
+        internal static Shader ShadowDisplayShader => Instance.shadowDisplayShader;
+        internal static Shader ShadowBlurShader => Instance.shadowBlurShader;
 
         internal static ProceduralImageAssets Instance
         {

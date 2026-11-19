@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
+using ProceduralUI.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -343,6 +344,19 @@ namespace ProceduralUI.Tests
             {
                 Object.DestroyImmediate(clip);
             }
+        }
+
+        [Test]
+        public void ManagedMaskToggleAddsAndRemovesUnityMask()
+        {
+            Assert.That(ManagedMask.HasMask(_image.gameObject), Is.False);
+
+            ManagedMask.SetMaskChildren(_image.gameObject, true);
+            Assert.That(_image.GetComponent<Mask>(), Is.Not.Null);
+            Assert.That(ManagedMask.HasMask(_image.gameObject), Is.True);
+
+            ManagedMask.SetMaskChildren(_image.gameObject, false);
+            Assert.That(_image.GetComponent<Mask>(), Is.Null);
         }
 
         private VertexHelper Populate()

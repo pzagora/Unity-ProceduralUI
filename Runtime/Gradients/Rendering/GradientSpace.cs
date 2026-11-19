@@ -14,11 +14,8 @@ namespace ProceduralUI
             _minimum = rect.min;
             _inverseSize = new Vector2(1f / rect.width, 1f / rect.height);
             var radians = Mathf.Repeat(angle, 360f) * Mathf.Deg2Rad;
-            var sine = Mathf.Sin(radians);
-            var cosine = Mathf.Cos(radians);
-            var scale = Mathf.Abs(sine) + Mathf.Abs(cosine);
-            _sine = sine / scale;
-            _cosine = cosine / scale;
+            _sine = Mathf.Sin(radians);
+            _cosine = Mathf.Cos(radians);
         }
 
         internal Vector2 Project(Vector3 position)

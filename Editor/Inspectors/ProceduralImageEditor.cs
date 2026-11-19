@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UI;
 using UnityEngine;
@@ -19,7 +20,10 @@ namespace ProceduralUI.Editor
         private SerializedProperty _type;
         private SerializedProperty _preserveAspect;
         private SerializedProperty _useSpriteMesh;
+        private SerializedProperty _raycastTarget;
+        private SerializedProperty _maskable;
         private GradientInspector _gradient;
+        private ShadowInspector _shadow;
 
         private static readonly GUIContent SOURCE_SPRITE = new("Source Sprite");
         private static readonly GUIContent RADIUS = new("Radius", "Corner radius in local UI units.");
@@ -29,9 +33,14 @@ namespace ProceduralUI.Editor
         private static readonly GUIContent BOTTOM_RIGHT = new("Bottom Right");
         private static readonly GUIContent BORDER = new("Border Width", "Zero fills the shape. Positive values draw an outline.");
         private static readonly GUIContent FALLOFF = new("Edge Softness", "Anti-aliasing distance in local UI units. Zero produces a hard edge.");
+        private static readonly GUIContent MASK_CHILDREN = new("Mask Children",
+            "Clip child graphics to this image's rounded shape using a uGUI Mask (added and removed automatically).");
+        private static readonly GUIContent SHOW_MASK_GRAPHIC = new("Show Mask Graphic",
+            "Draw this image as well as using it to mask its children.");
         private const string APPEARANCE = "Appearance";
         private const string SHAPE = "Shape";
-        private const string INTERACTION = "Interaction & Masking";
+        private const string INTERACTION = "Interaction";
+        private const string MASKING = "Masking";
         private const string NATIVE_SIZE = "Set Native Size";
         private const string MATERIAL_WARNING = "A custom material must support the Procedural Image vertex data to render corners and outlines.";
         private const string CORNER_MODE_PROPERTY = "cornerMode";
@@ -49,8 +58,11 @@ namespace ProceduralUI.Editor
         private const string BOTTOM_RIGHT_PROPERTY = "z";
         private const string BOTTOM_LEFT_PROPERTY = "w";
         private const string GRADIENT_PROPERTY = "gradient";
+        private const string RAYCAST_TARGET_PROPERTY = "m_RaycastTarget";
+        private const string MASKABLE_PROPERTY = "m_Maskable";
         private const string SHAPE_STATE = "ProceduralUI.Inspector.Shape";
         private const string INTERACTION_STATE = "ProceduralUI.Inspector.Interaction";
+        private const string MASKING_STATE = "ProceduralUI.Inspector.Masking";
 
         protected override void OnEnable()
         {
@@ -65,7 +77,17 @@ namespace ProceduralUI.Editor
             _type = serializedObject.FindProperty(TYPE_PROPERTY);
             _preserveAspect = serializedObject.FindProperty(PRESERVE_ASPECT_PROPERTY);
             _useSpriteMesh = serializedObject.FindProperty(USE_SPRITE_MESH_PROPERTY);
+            _raycastTarget = serializedObject.FindProperty(RAYCAST_TARGET_PROPERTY);
+            _maskable = serializedObject.FindProperty(MASKABLE_PROPERTY);
             _gradient = new GradientInspector(serializedObject.FindProperty(GRADIENT_PROPERTY));
+            _shadow = new ShadowInspector(this);
+
+            foreach (var item in targets)
+            {
+                var gameObject = ((ProceduralImage)item).gameObject;
+                ManagedMask.HideManagedMask(gameObject);
+                ManagedShadow.HideManagedShadow(gameObject);
+            }
         }
 
         public override void OnInspectorGUI()
@@ -77,7 +99,11 @@ namespace ProceduralUI.Editor
             EditorGUILayout.Space(6);
             _gradient.Draw();
             EditorGUILayout.Space(6);
+            _shadow.Draw();
+            EditorGUILayout.Space(6);
             DrawInteraction();
+            EditorGUILayout.Space(6);
+            DrawMasking();
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -152,7 +178,7 @@ namespace ProceduralUI.Editor
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                if (!InspectorSection.DrawHeader(SHAPE, SHAPE_STATE))
+                if (!InspectorSection.DrawHeader(SHAPE, SHAPE_STATE, BuildShapeBadges()))
                     return;
                 using (new EditorGUI.IndentLevelScope())
                 {
@@ -191,13 +217,144 @@ namespace ProceduralUI.Editor
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                if (!InspectorSection.DrawHeader(INTERACTION, INTERACTION_STATE))
+                if (!InspectorSection.DrawHeader(INTERACTION, INTERACTION_STATE, BuildInteractionBadges()))
+                    return;
+                using (new EditorGUI.IndentLevelScope())
+                    RaycastControlsGUI();
+            }
+        }
+
+        private void DrawMasking()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                if (!InspectorSection.DrawHeader(MASKING, MASKING_STATE, BuildMaskingBadges()))
                     return;
                 using (new EditorGUI.IndentLevelScope())
                 {
-                    RaycastControlsGUI();
                     MaskableControlsGUI();
+                    DrawMaskControls();
                 }
+            }
+        }
+
+        private void DrawMaskControls()
+        {
+            var masks = new List<Mask>();
+            var withMask = 0;
+            foreach (var item in targets)
+            {
+                var gameObject = ((ProceduralImage)item).gameObject;
+                if (gameObject.TryGetComponent<Mask>(out var mask))
+                {
+                    masks.Add(mask);
+                    withMask++;
+                }
+            }
+
+            EditorGUI.showMixedValue = withMask != 0 && withMask != targets.Length;
+            EditorGUI.BeginChangeCheck();
+            var enabled = EditorGUILayout.Toggle(MASK_CHILDREN, withMask == targets.Length);
+            if (EditorGUI.EndChangeCheck())
+            {
+                foreach (var item in targets)
+                    ManagedMask.SetMaskChildren(((ProceduralImage)item).gameObject, enabled);
+            }
+            EditorGUI.showMixedValue = false;
+
+            if (masks.Count == 0)
+                return;
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                var serialized = new SerializedObject(masks.ToArray());
+                EditorGUILayout.PropertyField(serialized.FindProperty(ManagedMask.ShowMaskGraphicProperty), SHOW_MASK_GRAPHIC);
+                serialized.ApplyModifiedProperties();
+            }
+        }
+
+        private IReadOnlyList<SectionBadge> BuildShapeBadges()
+        {
+            var badges = new List<SectionBadge>();
+
+            if (!_cornerMode.hasMultipleDifferentValues && TryGetMaxRadius(out var maxRadius) && maxRadius > 0f)
+                badges.Add(SectionBadge.Create(CornerTooltip((CornerMode)_cornerMode.intValue), BadgeGlyphs.RoundedRect));
+
+            if (!_borderWidth.hasMultipleDifferentValues && _borderWidth.floatValue > 0f)
+                badges.Add(SectionBadge.Create($"Outline width {_borderWidth.floatValue:0.##}", BadgeGlyphs.Ring));
+
+            if (!_falloffDistance.hasMultipleDifferentValues && _falloffDistance.floatValue > 0f)
+                badges.Add(SectionBadge.Create($"Edge softness {_falloffDistance.floatValue:0.##}", BadgeGlyphs.Softness));
+
+            return badges;
+        }
+
+        private IReadOnlyList<SectionBadge> BuildInteractionBadges()
+        {
+            var badges = new List<SectionBadge>();
+
+            if (!_raycastTarget.hasMultipleDifferentValues && _raycastTarget.boolValue)
+                badges.Add(SectionBadge.Create("Raycast Target: on", BadgeGlyphs.Crosshair));
+
+            return badges;
+        }
+
+        private IReadOnlyList<SectionBadge> BuildMaskingBadges()
+        {
+            var badges = new List<SectionBadge>();
+
+            if (!_maskable.hasMultipleDifferentValues && _maskable.boolValue)
+                badges.Add(SectionBadge.Create("Maskable: on", BadgeGlyphs.FilledSquare));
+
+            if (target is ProceduralImage image && image.TryGetComponent<Mask>(out var mask) && mask.enabled)
+                badges.Add(SectionBadge.Create("Masks children", BadgeGlyphs.Mask));
+
+            return badges;
+        }
+
+        private bool TryGetMaxRadius(out float maxRadius)
+        {
+            maxRadius = 0f;
+            switch ((CornerMode)_cornerMode.intValue)
+            {
+                case CornerMode.Uniform:
+                case CornerMode.Edge:
+                    if (_uniformRadius.hasMultipleDifferentValues)
+                        return false;
+                    maxRadius = _uniformRadius.floatValue;
+                    return true;
+                case CornerMode.Individual:
+                    if (_cornerRadii.hasMultipleDifferentValues)
+                        return false;
+                    var radii = _cornerRadii.vector4Value;
+                    maxRadius = Mathf.Max(Mathf.Max(radii.x, radii.y), Mathf.Max(radii.z, radii.w));
+                    return true;
+                case CornerMode.Round:
+                    maxRadius = 1f;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private string CornerTooltip(CornerMode mode)
+        {
+            switch (mode)
+            {
+                case CornerMode.Uniform:
+                    return $"Corners: Uniform, radius {_uniformRadius.floatValue:0.##}";
+                case CornerMode.Individual:
+                    var r = _cornerRadii.vector4Value;
+                    return $"Corners: Individual (TL {r.x:0.##}, TR {r.y:0.##}, BR {r.z:0.##}, BL {r.w:0.##})";
+                case CornerMode.Edge:
+                    var rounded = _roundedEdge.hasMultipleDifferentValues
+                        ? string.Empty
+                        : _roundedEdge.boolValue ? ", rounded edge" : ", straight edge";
+                    return $"Corners: Edge, radius {_uniformRadius.floatValue:0.##}{rounded}";
+                case CornerMode.Round:
+                    return "Corners: Round (pill)";
+                default:
+                    return "Corners";
             }
         }
     }

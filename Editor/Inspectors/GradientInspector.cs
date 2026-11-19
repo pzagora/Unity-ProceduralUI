@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -56,7 +57,7 @@ namespace ProceduralUI.Editor
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                if (!InspectorSection.DrawHeader(TITLE, STATE))
+                if (!InspectorSection.DrawHeader(TITLE, STATE, BuildBadges()))
                     return;
                 using (new EditorGUI.IndentLevelScope())
                 {
@@ -73,6 +74,34 @@ namespace ProceduralUI.Editor
                     EditorGUILayout.PropertyField(_intensity);
                 }
             }
+        }
+
+        private IReadOnlyList<SectionBadge> BuildBadges()
+        {
+            var badges = new List<SectionBadge>();
+            if (_enabled.hasMultipleDifferentValues || !_enabled.boolValue || _type.hasMultipleDifferentValues)
+                return badges;
+
+            var type = (GradientType)_type.intValue;
+            var (start, end) = SwatchColors(type);
+            badges.Add(SectionBadge.Create(BadgeTooltip(type), rect => BadgeGlyphs.Swatch(rect, start, end)));
+            return badges;
+        }
+
+        private (Color start, Color end) SwatchColors(GradientType type) => type switch
+        {
+            GradientType.Corners => (_topLeft.colorValue, _bottomRight.colorValue),
+            GradientType.Ramp => (Color.black, Color.white),
+            _ => (_startColor.colorValue, _endColor.colorValue)
+        };
+
+        private string BadgeTooltip(GradientType type)
+        {
+            var blend = _blendMode.hasMultipleDifferentValues
+                ? "—"
+                : _blendMode.enumDisplayNames[_blendMode.enumValueIndex];
+            var intensity = _intensity.hasMultipleDifferentValues ? "—" : _intensity.floatValue.ToString("0.##");
+            return $"Gradient: {type} · {blend} · Intensity {intensity}";
         }
 
         private void DrawColors(GradientType type)
