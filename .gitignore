@@ -1,0 +1,16 @@
+.vs/
+.idea/
+Library/
+Temp/
+obj/
+Logs/
+UserSettings/
+node_modules/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.tgz
+*.log
+.env
+.env.*

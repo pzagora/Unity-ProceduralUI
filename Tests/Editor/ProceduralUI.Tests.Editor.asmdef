@@ -1,0 +1,7 @@
+{
+  "name": "ProceduralUI.Tests.Editor",
+  "rootNamespace": "ProceduralUI.Tests",
+  "references": ["ProceduralUI", "ProceduralUI.Editor", "UnityEngine.UI", "UnityEditor.UI"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

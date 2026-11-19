@@ -1,0 +1,6 @@
+{
+  "name": "ProceduralUI.Editor",
+  "rootNamespace": "ProceduralUI.Editor",
+  "references": ["ProceduralUI", "UnityEngine.UI", "UnityEditor.UI"],
+  "includePlatforms": ["Editor"]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "ProceduralUI",
+  "rootNamespace": "ProceduralUI",
+  "references": ["UnityEngine.UI"]
+}
