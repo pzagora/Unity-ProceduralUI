@@ -112,14 +112,14 @@ namespace ProceduralUI.Editor
             EditorGUI.BeginProperty(rect, SOURCE_SPRITE, _sprite);
             EditorGUI.showMixedValue = _sprite.hasMultipleDifferentValues;
             var sprite = _sprite.objectReferenceValue as Sprite;
-            if (sprite == ProceduralImageResources.WhiteSprite)
+            if (sprite == ProceduralImageAssets.WhiteSprite)
                 sprite = null;
 
             EditorGUI.BeginChangeCheck();
             var selected = EditorGUI.ObjectField(rect, SOURCE_SPRITE, sprite, typeof(Sprite), false) as Sprite;
             if (EditorGUI.EndChangeCheck())
             {
-                _sprite.objectReferenceValue = selected != null ? selected : ProceduralImageResources.WhiteSprite;
+                _sprite.objectReferenceValue = selected != null ? selected : ProceduralImageAssets.WhiteSprite;
                 foreach (var item in targets)
                     ((ProceduralImage)item).DisableSpriteOptimizations();
             }
@@ -131,7 +131,7 @@ namespace ProceduralUI.Editor
         private void DrawNativeSize()
         {
             using (new EditorGUI.DisabledScope(_sprite.hasMultipleDifferentValues ||
-                       _sprite.objectReferenceValue == null || _sprite.objectReferenceValue == ProceduralImageResources.WhiteSprite))
+                       _sprite.objectReferenceValue == null || _sprite.objectReferenceValue == ProceduralImageAssets.WhiteSprite))
             {
                 var rect = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect());
                 if (!GUI.Button(rect, NATIVE_SIZE))

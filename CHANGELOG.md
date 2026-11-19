@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2]
+
+- Organized runtime, editor and test files by responsibility while preserving asset GUIDs and public namespaces.
+- Removed Resources loading and moved the material and sprite into dedicated asset folders, preserving their GUIDs.
+- Added a bundled ScriptableObject with automatic preload registration and build validation for runtime-created images.
+
 ## [1.0.1]
 
 - Fixed partial-width foldout header backgrounds while preserving inset arrows and full-width clickable headers.

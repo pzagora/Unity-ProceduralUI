@@ -67,7 +67,7 @@ The serialized settings use a struct so Unity animation clips can bind fields su
 
 ## Rendering and performance
 
-Images share a default material. Shape data travels through vertex channels rather than per-image material instances. The component enables TexCoord1, TexCoord2 and TexCoord3 on its Canvas; these channels increase the vertex payload for that Canvas.
+Images share a default material and sprite through the bundled `ProceduralImageAssets` asset. Editor registration adds it to Player Settings > Preloaded Assets and the build processor verifies it before building, preserving other preloaded assets. Unity loads its direct references for runtime-created images as well as scene and prefab instances. The package does not use Resources or require Addressables configuration. Shape data travels through vertex channels rather than per-image material instances. The component enables TexCoord1, TexCoord2 and TexCoord3 on its Canvas; these channels increase the vertex payload for that Canvas.
 
 Geometry rebuilds use Unity's normal dirty/layout/animation lifecycle. There is no Update loop, Editor update subscription or modifier lookup. Runtime setters avoid redundant dirty notifications. Sprite UVs and shape coordinates are separate, so atlas subrects and partial fills do not relocate the corners.
 
@@ -86,6 +86,17 @@ Code now uses the `ProceduralUI` namespace and assembly. Replace `ModifierType` 
 Animation clips and external projects targeting old modifier components require their bindings to be retargeted before removing those components.
 
 The ReceiptOCR UIGradient migration moves eight gradients into their Procedural Images and retains one standalone gradient on an ordinary Image. Original colors, stops, blend modes, intensities, angles and enabled states are preserved. `UIGradient` now lives in `ProceduralUI`; configure it through its `Gradient` property. The old `Vector2Extension` helper is no longer required. External animation clips targeting the old component fields must be retargeted to the nested `gradient` fields.
+
+## Package layout
+
+- `Runtime/Images`: procedural image component, corner modes, geometry and shared resource access.
+- `Runtime/Gradients`: gradient components, configuration and runtime API; `Rendering` contains mesh processing.
+- `Runtime/Shaders`: the procedural image shader referenced by the shared material.
+- `Runtime/Assets`, `Runtime/Materials` and `Runtime/Sprites`: the bundled asset references, shared material and default sprite.
+- `Editor/Inspectors`, `Editor/Menus` and `Editor/Assets`: component inspectors, creation commands and automatic preload registration.
+- `Tests/Editor`: tests grouped into Images, Gradients and Inspectors.
+
+Assembly definitions remain at the Runtime, Editor and Tests/Editor roots. Folder organization does not change the public namespaces.
 
 ## Development
 

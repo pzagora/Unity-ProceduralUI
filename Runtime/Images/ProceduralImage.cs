@@ -59,7 +59,7 @@ namespace ProceduralUI
             set => SetValue(ref falloffDistance, Mathf.Max(0, value));
         }
 
-        public override Material defaultMaterial => ProceduralImageResources.Material;
+        public override Material defaultMaterial => ProceduralImageAssets.Material;
 
         public override Material material
         {
@@ -117,7 +117,7 @@ namespace ProceduralUI
         private void EnsureSprite()
         {
             if (sprite == null)
-                sprite = ProceduralImageResources.WhiteSprite;
+                sprite = ProceduralImageAssets.WhiteSprite;
         }
 
         private void EnsureShaderChannels()
